@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import math
 import matplotlib.pyplot as plt
+
 from tensorflow import keras
 from keras import models, layers, initializers
 from keras.layers import Input, Conv1D,  Dense,  MaxPooling1D,  Flatten, Activation,  Dropout, GaussianNoise, Reshape, BatchNormalization, Convolution2D,  MaxPooling2D
@@ -13,14 +14,12 @@ from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau,  
 from keras.wrappers.scikit_learn import KerasRegressor
 from keras.optimizers import Adam
 from keras.utils import np_utils
-from sklearn import linear_model,  preprocessing
+
 from scipy import stats
 from scipy.signal import spectrogram
-from sklearn.datasets import make_classification
-from sklearn.model_selection import cross_val_score,KFold,StratifiedShuffleSplit,train_test_split
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import LabelEncoder,StandardScaler,MinMaxScaler
-from sklearn.metrics import r2_score,mean_squared_error
+from sklearn import preprocessing
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 from datetime import datetime
 
 def main(model_num, model_type):
@@ -558,4 +557,4 @@ def main(model_num, model_type):
     Y_predT=sc_y.inverse_transform(Y_pred)
 
     # export the results
-    np.savetxt(str('Model_')+str(m)+str(nn)+str('.csv'),Y_predT,delimiter=',')
+    np.savetxt(str('Model')+str(m)+str(nn)+str('.csv'),Y_predT,delimiter=',')
