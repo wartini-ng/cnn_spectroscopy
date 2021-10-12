@@ -23,7 +23,7 @@ from sklearn.preprocessing import StandardScaler
 from datetime import datetime
 
 def main(model_num, model_type):
-    np.random.seed(1)
+    random_seed = 1
 
     #load the data ::
     Data= sio.loadmat('KSSL_new2.mat')
@@ -42,13 +42,23 @@ def main(model_num, model_type):
     # _=plt.plot(lamda_MIR1,MIR.T)
 
     #Split the dataset :
-    X_cal_NIR, X_val_NIR, y_calX, y_valX = train_test_split(X_train_NIR, y_train, train_size=0.75,random_state=15)
-    X_cal_MIR, X_val_MIR= train_test_split(X_train_MIR, train_size=0.75,random_state=15)
+    X_cal_NIR, X_val_NIR, y_calX, y_valX = train_test_split(X_train_NIR, y_train, train_size=0.75,random_state=random_seed)
+    X_cal_MIR, X_val_MIR= train_test_split(X_train_MIR, train_size=0.75,random_state=random_seed)
 
     #transform the Y
     sc_y = StandardScaler()
     y_cal = sc_y.fit_transform(y_calX)
     y_val = sc_y.transform(y_valX)
+    
+    #transform the X
+    def filter_SNV(spectra):
+      """ SNV spectra transformation  """
+      M, N = spectra.shape
+      treated_spec = np.zeros([M, N])
+      for i in range(0, M):
+          temp = spectra[i,:]
+          treated_spec[i,:]=(temp - np.mean(temp))/np.std(temp)
+      return treated_spec
 
     # set up model parameters
     EPOCH = 500
@@ -327,12 +337,9 @@ def main(model_num, model_type):
     print('Running model: {} ({})'.format(model_num, model_type))
     if model_num== 1:
         m='MIR_1D'
-        cal_spec=X_cal_MIR;
-
-        mean=0;std=1
-
-        # standardize the spectra
-        cal_spec = (X_cal_MIR-mean)/std; val_spec = (X_val_MIR-mean)/std; test_spec = (X_test_MIR-mean)/std
+	
+        # get the standardized spectra
+        cal_spec = X_cal_MIR; val_spec = X_val_MIR; test_spec = X_test_MIR
 
         # reshape the spectra to match input for the model
         cal_spec = cal_spec.reshape(cal_spec.shape[0],cal_spec.shape[1],1)
@@ -343,12 +350,9 @@ def main(model_num, model_type):
 	#model 2: NIR 1D MultipleY
     elif model_num==2:
         m='NIR_1D'
-        cal_spec=X_cal_NIR;
-
-        mean=0;std=1
-
-        # standardize the spectra
-        cal_spec = (X_cal_NIR-mean)/std; val_spec = (X_val_NIR-mean)/std; test_spec = (X_test_NIR-mean)/std
+         
+	# get the standardized spectra
+        cal_spec = X_cal_NIR; val_spec = X_val_NIR; test_spec = X_test_NIR
 
         # reshape the spectra to match input for the model
         cal_spec=cal_spec.reshape(cal_spec.shape[0],cal_spec.shape[1],1)
@@ -362,29 +366,27 @@ def main(model_num, model_type):
         nb_features=X_train_MIRr.shape[1]; channel_number=2
 
         # use the resampled MIR data (ensuring both NIR and MIR are same lengths when you are loading it as two channels)
-        X_cal_MIR, X_val_MIR= train_test_split(X_train_MIRr, train_size=0.75,random_state=15)
+        X_cal_MIR, X_val_MIR= train_test_split(X_train_MIRr, train_size=0.75,random_state=random_seed)
         X_test_MIR = X_test_MIRr
-
-        mean_a=0; mean_b=0
-        std_a=1; std_b=1
-
+	
+	# get the standardized spectra
         cal_spec = np.zeros((len(X_cal_NIR), nb_features, 2))
-        cal_spec[:, :, 0] = (X_cal_NIR-mean_a)/std_a
-        cal_spec[:, :, 1] = (X_cal_MIR-mean_b)/std_b
+	cal_spec[:, :, 0] = X_cal_NIR
+	cal_spec[:, :, 1] = X_cal_MIR
 
-        val_spec = np.zeros((len(X_val_NIR), nb_features, 2))
-        val_spec[:, :, 0] = (X_val_NIR-mean_a)/std_a
-        val_spec[:, :, 1] = (X_val_MIR-mean_b)/std_b
+	val_spec = np.zeros((len(X_val_NIR), nb_features, 2))
+	val_spec[:, :, 0] = X_val_NIR
+	val_spec[:, :, 1] = X_val_MIR
 
-        test_spec = np.zeros((len(X_test_NIR), nb_features, 2))
-        test_spec[:, :, 0] = (X_test_NIR-mean_a)/std_a
-        test_spec[:, :, 1] = (X_test_MIR-mean_b)/std_b
+	test_spec = np.zeros((len(X_test_NIR), nb_features, 2))
+	test_spec[:, :, 0] = X_test_NIR
+	test_spec[:, :, 1] = X_test_MIR
 
     # model 4: MIR 2D (spectrogram)
     elif model_num==4:
         m='MIR_2D'
 
-        X_cal_MIR, X_val_MIR= train_test_split(X_train_MIRr, train_size=0.75,random_state=15)
+        X_cal_MIR, X_val_MIR= train_test_split(X_train_MIRr, train_size=0.75,random_state=random_seed)
         X_test_MIR = X_test_MIRr
 
         Sxx1 = spectrogram_std(X_cal_MIR); cal_spec=scaleme(Sxx1,Sxx1)
@@ -404,7 +406,7 @@ def main(model_num, model_type):
     #model 6: NIRMIR 2D (spectrogram)
     elif model_num==6:
         m='NIRMIRres_2D'
-        X_cal_MIR, X_val_MIR= train_test_split(X_train_MIRr, train_size=0.75,random_state=15)
+        X_cal_MIR, X_val_MIR= train_test_split(X_train_MIRr, train_size=0.75,random_state=random_seed)
         X_test_MIR = X_test_MIRr
 
         tempp1 = spectrogram_std(X_cal_NIR); temp1=scaleme(tempp1,tempp1)
@@ -446,8 +448,8 @@ def main(model_num, model_type):
         X_train_NIR = Data['NIRc'];X_test_NIR=Data['NIRv']
 
         #Split the dataset :
-        X_cal_NIR, X_val_NIR, y_calX, y_valX = train_test_split(X_train_NIR, y_train, train_size=0.75,random_state=15)
-        X_cal_MIR, X_val_MIR= train_test_split(X_train_MIR, train_size=0.75,random_state=15)
+        X_cal_NIR, X_val_NIR, y_calX, y_valX = train_test_split(X_train_NIR, y_train, train_size=0.75,random_state=random_seed)
+        X_cal_MIR, X_val_MIR= train_test_split(X_train_MIR, train_size=0.75,random_state=random_seed)
 
         cal_spec=OPA_res(X_cal_MIR,X_cal_NIR);
         val_spec=OPA_res(X_val_MIR,X_val_NIR);
